@@ -16,7 +16,6 @@ if (typeof FileReader !== "undefined") {
 
       this.target = input
       this.format = "readAs" + (format || FileReader.format)
-      this.dispatchEvent = this.dispatchEvent.bind(this)
       Object.defineProperty(input, "__autoFileReader", {
         enumerable: false,
         configurable: false,
@@ -71,24 +70,29 @@ if (typeof FileReader !== "undefined") {
       }
     })
 
-    AutoFileReader.prototype.dispatchEvent = function AutoFileReader$dispatchEvent(event) {
+    AutoFileReader.prototype.dispatcher = function AutoFileReader$dispatcher(file) {
       var input = this.target
 
-      // Dispatch asyncronous to avoid "The event is already being dispatched"
-      setTimeout(function dispatchAsync() {
-        input.dispatchEvent(event)
-      }, 0)
+      return function dispatchEvent(event) {
+        event.relatedTarget = file
+
+        // Dispatch asyncronous to avoid "The event is already being dispatched"
+        setTimeout(function dispatchAsync() {
+          input.dispatchEvent(event)
+        }, 0)
+      }
     }
 
     AutoFileReader.prototype.read = function AutoFileReader$read(file) {
-      var reader = file.reader = new FileReader()
+      var reader = file.reader = new FileReader(),
+          dispatchEvent = this.dispatcher(file)
 
-      reader.onabort = this.dispatchEvent
-      reader.onerror = this.dispatchEvent
-      reader.onload = this.dispatchEvent
-      reader.onloadstart = this.dispatchEvent
-      reader.onloadend = this.dispatchEvent
-      reader.onprogress = this.dispatchEvent
+      reader.onabort = dispatchEvent
+      reader.onerror = dispatchEvent
+      reader.onload = dispatchEvent
+      reader.onloadstart = dispatchEvent
+      reader.onloadend = dispatchEvent
+      reader.onprogress = dispatchEvent
 
       reader[this.format](file)
 
