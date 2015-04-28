@@ -14,10 +14,6 @@ if (typeof FileReader !== "undefined") {
     function AutoFileReader(input, format) {
       var i
 
-      if (!(this instanceof AutoFileReader)) {
-        return input.__autoFileReader || new AutoFileReader(input, format)
-      }
-
       this.target = input
       this.format = "readAs" + (format || FileReader.format)
       this.dispatchEvent = this.dispatchEvent.bind(this)
@@ -174,7 +170,9 @@ if (typeof FileReader !== "undefined") {
     }
 
     // Attach to FileReader
-    FileReader.auto = AutoFileReader
+    FileReader.auto = function FileReader_auto(input, format) {
+      return input.__autoFileReader || new AutoFileReader(input, format)
+    }
     if (typeof FileReader.format === "undefined") {
       FileReader.format = "DataURL"
     }
