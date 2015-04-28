@@ -3,10 +3,6 @@
   "version": "1.0.0",
   "description": "Upgrade your `input[type=file]` to automatically load their selected file(s). Integrated with AngularJS as an proper directive.",
   "main": "server.js",
-  "dependencies": {
-    "express": "^4.12.3",
-    "body-parser": "^1.12.3"
-  },
   "devDependencies": {
     "body-parser": "^1.12.3",
     "express": "^4.12.3"
