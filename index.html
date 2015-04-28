@@ -1,0 +1,69 @@
+<!DOCTYPE HTML>
+<html>
+  <head>
+    <title>AngularJS file directive</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.2.26/angular.js"></script>
+    <script src="autoload.js"></script>
+    <script src="directive.js"></script>
+    <script>
+      angular.module("fileExample", ["angular-input-file"])
+        .controller("ExampleController", ["$scope", function($scope) {
+          $scope.file  = {}
+          $scope.files = []
+
+          $scope.log = function log() {
+            console.log($scope.file)
+          }
+
+          $scope.show = function show() {
+            return {
+              name: $scope.file.name,
+              size: $scope.file.size,
+              type: $scope.file.type,
+              data: $scope.file.reader && $scope.file.reader.result,
+            }
+          }
+        }])
+    </script>
+  </head>
+  <body data-ng-app="fileExample">
+    <main data-ng-controller="ExampleController">
+      <form action="/process" method="POST">
+        <label>
+          Multiple files:
+          <input multiple type="file" data-ng-model="files" />
+        </label>
+        <label>
+          Single file:
+          <input  type="file" data-ng-model="file" />
+        </label>
+        <button data-ng-click="log()">Log</button>
+      </form>
+      <section>
+        <header>File</header>
+        <span>{{show()}}</span>
+      </section>
+      <section>
+        <header>Files</header>
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Size</th>
+              <th>Type</th>
+              <th>Data</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr data-ng-repeat="file in files">
+              <td>{{file.name}}</td>
+              <td>{{file.size}}</td>
+              <td>{{file.type}}</td>
+              <td>{{file.reader.result}}</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+    </main>
+  </body>
+</html>

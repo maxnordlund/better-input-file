@@ -1,0 +1,33 @@
+{
+  "name": "better-input-file",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "dependencies": {
+    "express": "^4.12.3",
+    "body-parser": "^1.12.3"
+  },
+  "devDependencies": {
+    "body-parser": "^1.12.3",
+    "express": "^4.12.3"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/studentcompetitions/better-input-file.git"
+  },
+  "keywords": [
+    "file",
+    "filereader",
+    "auto"
+  ],
+  "author": "Max Nordlund <max.nordlund@sqore.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/studentcompetitions/better-input-file/issues"
+  },
+  "homepage": "https://github.com/studentcompetitions/better-input-file"
+}
