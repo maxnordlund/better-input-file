@@ -23,11 +23,13 @@ angular.module("angular-input-file", [])
           }
 
           handler = function handleMultiple(event) {
-            ngModel.$setViewValue(Array.prototype.concat.apply([], event.files))
+            var files = (event.originalEvent || event).files
+            ngModel.$setViewValue(Array.prototype.concat.apply([], files))
           }
         } else {
           handler = function handleSingle(event) {
-            ngModel.$setViewValue(event.files[0])
+            var file = (event.originalEvent || event).files[0]
+            ngModel.$setViewValue(file)
           }
         }
 
