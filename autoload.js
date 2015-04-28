@@ -108,6 +108,7 @@ if (typeof FileReader !== "undefined") {
 
     AutoFileReader.prototype.onDrop = function AutoFileReader$onDrop(event) {
       this.processFiles(event.dataTransfer.files)
+      event.preventDefault()
     }
 
     AutoFileReader.prototype.processFiles = function AutoFileReader$processFiles(files) {
