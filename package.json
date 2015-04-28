@@ -1,7 +1,7 @@
 {
   "name": "better-input-file",
   "version": "1.0.0",
-  "description": "",
+  "description": "Upgrade your `input[type=file]` to automatically load their selected file(s). Integrated with AngularJS as an proper directive.",
   "main": "server.js",
   "dependencies": {
     "express": "^4.12.3",
