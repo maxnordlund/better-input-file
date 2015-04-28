@@ -1,0 +1,25 @@
+{
+  "name": "better-input-file",
+  "version": "0.0.0",
+  "homepage": "https://github.com/studentcompetitions/better-input-file",
+  "authors": [
+    "Max Nordlund <max.nordlund@gmail.com>"
+  ],
+  "description": "Upgrade your `input[type=file]` to automatically load their selected file(s). Integrated with AngularJS as an proper directive.",
+  "main": "autoload.js",
+  "keywords": [
+    "file",
+    "filereader",
+    "auto"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests",
+    "server.js",
+    "index.html"
+  ]
+}
