@@ -38,16 +38,6 @@ angular.module("angular-input-file", [])
           // we need to make sure to update Angular
           scope.$apply()
         })
-
-        // Debug
-        var events = ["load", "loadallstart", "loadall", "progress", "error", "abort"]
-
-        events.forEach(function(name){
-          console.log("Listening on", name)
-          element.on(name, function logger() {
-            console.log(name, event)
-          })
-        })
       }
     }
   })
