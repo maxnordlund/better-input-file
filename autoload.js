@@ -178,6 +178,7 @@ if (typeof FileReader !== "undefined") {
     FileReader.auto = function FileReader_auto(input, format) {
       return input.__autoFileReader || new AutoFileReader(input, format)
     }
+
     if (typeof FileReader.format === "undefined") {
       FileReader.format = "DataURL"
     }

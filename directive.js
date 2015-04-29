@@ -3,42 +3,66 @@ angular.module("angular-input-file", [])
     return {
       restrict: "E",
       require: "?ngModel",
-      scope: {},
+      scope: {
+        maxSize: "=?maxSize",
+        readFormat: "=?readFormat"
+      },
       link: function link(scope, element, attr, ngModel) {
-        var handler
-
         // This directive should only activate if the element it's attached to is
         // an input[type=file] and it has a ngModel.
         if (!ngModel || attr.type !== "file") return
 
+        function emptyArray(value) {
+          return !value || value.length === 0
+        }
+
+        function validate(name, files, validator) {
+          var validity = emptyArray(files) || files.every(validator)
+          ngModel.$setValidity(name, validity)
+          return validFiles
+        }
+
+        function setViewValue(event) {
+          scope.$apply(function setter() {
+            ngModel.$setViewValue((event.originalEvent || event).files)
+          })
+        }
+
         // Enable automatic file loading
-        FileReader.auto(element[0], "DataURL")
+        FileReader.auto(element[0], scope.readFormat)
 
-        // Make sure we set the pristine flag at link time
-        ngModel.$setPristine()
+        // Assume mutiple files to simplify the code
 
+        // Transform `FileList` -> `Array`
+        ngModel.$parsers.push(function toArray(files) {
+          return Array.prototype.concat.apply([], files)
+        })
+
+        // Max size validator
+        if (typeof scope.maxSize === "number") {
+          ngModel.$parsers.push(function validateAllSizes(files) {
+            return validate("maxSize", files, function validateSize(file) {
+              return file && file.size <= scope.maxSize
+            })
+          })
+        }
+
+        // Handle multiple/single file(s)
         if (attr.multiple) {
-          ngModel.$isEmpty = function(value) {
-            return !value || value.length === 0
-          }
-
-          handler = function handleMultiple(event) {
-            var files = (event.originalEvent || event).files
-            ngModel.$setViewValue(Array.prototype.concat.apply([], files))
-          }
+          ngModel.$isEmpty = emptyArray
         } else {
-          handler = function handleSingle(event) {
-            var file = (event.originalEvent || event).files[0]
-            ngModel.$setViewValue(file)
-          }
+          ngModel.$parsers.push(function toSingle(files) {
+            return files && files[0]
+          })
         }
 
         // Attach event listners to FileReader events
-        element.on("loadallstart", handler)
-        element.on("loadall", function loadall(event) {
-          // Since event.file(s) is the same object/array as in "loadallstart"
-          // we need to make sure to update Angular
+        element.on("loadallstart", setViewValue)
+        element.on("load", function() {
           scope.$apply()
+        })
+        element.on("error", function(event) {
+          console.error("Error:", event)
         })
       }
     }

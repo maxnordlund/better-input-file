@@ -25,13 +25,18 @@
           }
         }])
     </script>
+    <style>
+      input.ng-invalid {
+        outline: 1px solid red;
+      }
+    </style>
   </head>
   <body data-ng-app="fileExample">
     <main data-ng-controller="ExampleController">
       <form action="/process" method="POST">
         <label>
           Multiple files:
-          <input multiple type="file" data-ng-model="files" />
+          <input multiple type="file" data-ng-model="files" data-max-size="2097152" />
         </label>
         <label>
           Single file:
