@@ -45,7 +45,7 @@ if (typeof FileReader === "function") {
       }
     }
 
-    Object.defineProperty(AutoFileReader.prototype, "labels", {
+    _defineLazyProperty(AutoFileReader.prototype, "labels", {
       enumerable: true,
       configurable: false,
       get: function getLabels() {
@@ -70,16 +70,35 @@ if (typeof FileReader === "function") {
           }
         }
 
-        // Remeber this value to save a few cycles
-        Object.defineProperty(this, "labels", {
-          enumerable: true,
-          configurable: false,
-          writable: false,
-          value: Array.prototype.concat.apply([], labels)
-        })
-        return this.labels
+        return Array.prototype.concat.apply([], labels)
       }
     })
+
+    /**
+     * Define a lazily evaluated memonized property on the provided object with
+     * the provided key using the provided property descriptor.
+     *
+     * It has the same parameters as `Object.defineProperty`.
+     *
+     * @param {Object} object
+     * @param {String} key
+     * @param {Object} descriptor
+     */
+    function _defineLazyProperty(object, key, descriptor) {
+      var getter = descriptor.get,
+          writable = descriptor.writeable || false
+
+      delete descriptor.writeable
+      descriptor.get = function init() {
+        delete descriptor.get
+        delete descriptor.set
+        descriptor.value = getter.call(this)
+        descriptor.writeable = writable
+        Object.defineProperty(this, key, descriptor)
+        return descriptor.value
+      }
+      Object.defineProperty(object, key, descriptor)
+    }
 
     /**
      * Creates and returns a dispatcher function bound to the input element
