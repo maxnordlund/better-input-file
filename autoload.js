@@ -54,7 +54,7 @@ if (typeof FileReader === "function") {
             labels = input.labels
 
         // Find the labels for this input in the DOM
-        if (typeof labels === "undefined") {
+        if (labels == null) {
           if (input.id) {
             labels = document.querySelectorAll("label[for=" + input.id + "]")
           }
