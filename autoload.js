@@ -8,7 +8,7 @@
  * It is safe to call `FileReader.auto` multiple times on the same element, as
  * it remembers if it already has been called with that element.
  */
-if (typeof FileReader !== "undefined") {
+if (typeof FileReader === "function") {
   (function() {
     "use strict"
 
