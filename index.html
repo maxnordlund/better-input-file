@@ -2,7 +2,8 @@
 <html>
   <head>
     <title>AngularJS file directive</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.2.26/angular.js"></script>
+    <script src="bower_components/angular/angular.js"></script>
+    <script src="bower_components/error-stack-parser/dist/error-stack-parser.min.js"></script>
     <script src="autoload.js"></script>
     <script src="directive.js"></script>
     <script>
@@ -36,7 +37,7 @@
       <form action="/process" method="POST">
         <label>
           Multiple files:
-          <input multiple type="file" data-ng-model="files" data-max-size="2097152" />
+          <input multiple type="file" data-ng-model="files" data-max-size="2 MiB" />
         </label>
         <label>
           Single file:
