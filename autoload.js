@@ -1,16 +1,27 @@
 /**
  * If the browser supports it, find all input[type=file] and attch event
- * listners to automatically load the selected file using FileReader.
+ * listners to automatically load the selected file(s) using FileReader(s).
  *
- * Caveats:
- * This needs FileReader to work and uses a simple detection test to see if the
- * browser supports it. However it then assumes that the browser is fairly new
- * and has access to some of the other HTML5 APIs. All the modern browsers that
- * do support FileReader also supports these extra APIs but if you need it to
- * work on something exotic, make sure to test it.
+ * Since the above is run only once when the DOM is ready, it won't pick up any
+ * dynamically added input elements. For those situations this adds new static
+ * method `FileReader.auto` which takes an input element and enables the above.
+ * It is safe to call `FileReader.auto` multiple times on the same element, as
+ * it remembers if it already has been called with that element.
  */
 if (typeof FileReader !== "undefined") {
   (function() {
+    "use strict"
+
+    // --- Begin Definitions ---
+
+    /**
+     * AutoFileReader represents the infrastructure to automatically read files
+     * using native FileReader objects.
+     *
+     * @constructor
+     * @param {HTMLInputElement} input element to attach to
+     * @param {String = FileReader.format} format to read as
+     */
     function AutoFileReader(input, format) {
       var i
 
@@ -23,10 +34,10 @@ if (typeof FileReader !== "undefined") {
         value: this
       })
 
-      // Normal interaction
+      // Enable automatic reading when this input changes
       input.addEventListener("change", this.onChange.bind(this), false)
 
-      // Drag and Drop
+      // Enable Drag'N'Drop on all of this inputs labels
       for (i = 0; i < this.labels.length; ++i) {
         this.labels[i].addEventListener("dragenter", enableDragAndDrop, false)
         this.labels[i].addEventListener("dragover", enableDragAndDrop, false)
@@ -70,10 +81,21 @@ if (typeof FileReader !== "undefined") {
       }
     })
 
+    /**
+     * Creates and returns a dispatcher function bound to the input element
+     * this is attached to.
+     *
+     * @param {File} file to set as relatedTarget on the dispatached event
+     * @return {dispatchEventAsync} dispatcher function
+     */
     AutoFileReader.prototype.dispatcher = function AutoFileReader$dispatcher(file) {
       var input = this.target
 
-      return function dispatchEvent(event) {
+      /**
+       * @callback dispatchEventAsync
+       * @param {Event} event to dispatch asyncronously
+       */
+      return function dispatchEventAsync(event) {
         event.relatedTarget = file
 
         // Dispatch asyncronous to avoid "The event is already being dispatched"
@@ -83,6 +105,12 @@ if (typeof FileReader !== "undefined") {
       }
     }
 
+    /**
+     * Read the provided file using a FileReader and pipe the readers events to
+     * the input element this is attached to.
+     *
+     * @param {File} file to read
+     */
     AutoFileReader.prototype.read = function AutoFileReader$read(file) {
       var reader = file.reader = new FileReader(),
           dispatchEvent = this.dispatcher(file)
@@ -102,15 +130,32 @@ if (typeof FileReader !== "undefined") {
       }
     }
 
+    /**
+     * Callback for _change_ events from the input element this is attached to.
+     *
+     * @callback onChange
+     * @param {Event} event
+     */
     AutoFileReader.prototype.onChange = function AutoFileReader$onChange(event) {
       this.processFiles(event.target.files)
     }
 
+    /**
+     * Callback for _drop_ events from the input element this is attached to.
+     *
+     * @callback onDrop
+     * @param {Event} event
+     */
     AutoFileReader.prototype.onDrop = function AutoFileReader$onDrop(event) {
       this.processFiles(event.dataTransfer.files)
       event.preventDefault()
     }
 
+    /**
+     * Read all the provided files and fire the corresponding events.
+     *
+     * @param {FileList} files to start reading
+     */
     AutoFileReader.prototype.processFiles = function AutoFileReader$processFiles(files) {
       var i, input = this.target
 
@@ -140,6 +185,13 @@ if (typeof FileReader !== "undefined") {
         return event
     }
 
+    /**
+     * Listen on the provided files' readers' events and return a Promise that
+     * acts accordingly.
+     *
+     * @param {File} file whose reader will listened on
+     * @return {Promise} for the completion of the reading
+     */
     function _fileToPromise(file) {
       var name,
           events = {},
@@ -174,7 +226,19 @@ if (typeof FileReader !== "undefined") {
       event.preventDefault()
     }
 
-    // Attach to FileReader
+    // --- End Definitions ---
+
+    /**
+     * Attach the needed infrastructure for automatic reading on the provided
+     * input element in the provided format.
+     *
+     * This is safe to call multiple times on the same input element. It will
+     * remember if it already has been called.
+     *
+     * @param {HTMLInputElement} input element to attach to
+     * @param {String} format to read the file as
+     * @return {AutoFileReader}
+     */
     FileReader.auto = function FileReader_auto(input, format) {
       return input.__autoFileReader || new AutoFileReader(input, format)
     }
