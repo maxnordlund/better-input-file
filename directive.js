@@ -8,8 +8,8 @@ angular.module("angular-input-file", [])
         readFormat: "=?readFormat"
       },
       link: function link(scope, element, attr, ngModel) {
-        // This directive should only activate if the element it's attached to is
-        // an input[type=file] and it has a ngModel.
+        // This directive should only activate if the element it's attached to
+        // is an input[type=file] and it has a ngModel.
         if (!ngModel || attr.type !== "file") return
 
         function emptyArray(value) {
@@ -31,9 +31,10 @@ angular.module("angular-input-file", [])
         // Enable automatic file loading
         FileReader.auto(element[0], scope.readFormat)
 
-        // Assume mutiple files to simplify the code
+        // In order to simplify the code, assume multiple files and handle the
+        // single file case further down.
 
-        // Transform `FileList` -> `Array`
+        // Transform the Array-like `FileList` into a builtin `Array`
         ngModel.$parsers.push(function toArray(files) {
           return Array.prototype.concat.apply([], files)
         })
@@ -56,13 +57,7 @@ angular.module("angular-input-file", [])
           })
         }
 
-        // Attach event listners to FileReader events
-        element.on("loadallstart", setViewValue)
-        element.on("load", function() {
-          scope.$apply()
-        })
-        element.on("error", function(event) {
-          console.error("Error:", event)
+        element.on("loadstart-all", setViewValue)
         })
       }
     }

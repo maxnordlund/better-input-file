@@ -108,7 +108,7 @@ if (typeof FileReader === "function") {
      * @return {dispatchEventAsync} dispatcher function
      */
     AutoFileReader.prototype.dispatcher = function AutoFileReader$dispatcher(file) {
-      var input = this.target
+      var dispatchEvent = this.target.dispatchEvent.bind(this.target)
 
       /**
        * @callback dispatchEventAsync
@@ -118,9 +118,7 @@ if (typeof FileReader === "function") {
         event.relatedTarget = file
 
         // Dispatch asyncronous to avoid "The event is already being dispatched"
-        setTimeout(function dispatchAsync() {
-          input.dispatchEvent(event)
-        }, 0)
+        setTimeout(dispatchEvent, 0, event)
       }
     }
 
@@ -150,6 +148,20 @@ if (typeof FileReader === "function") {
     }
 
     /**
+     * Create and dispatch a CustomEvent with the provided name and details to
+     * the EventTarget bound to this function.
+     *
+     * @this {EventTarget} to dispatch the event to
+     * @param {String} name of the event
+     * @param {*} details for the event
+     */
+    function _dispatchCustomEvent(name, details) {
+        var event = document.createEvent("CustomEvent")
+        event.initCustomEvent(name, false, false, details)
+        this.dispatchEvent(event)
+    }
+
+    /**
      * Callback for _change_ events from the input element this is attached to.
      *
      * @callback onChange
@@ -176,32 +188,27 @@ if (typeof FileReader === "function") {
      * @param {FileList} files to start reading
      */
     AutoFileReader.prototype.processFiles = function AutoFileReader$processFiles(files) {
-      var i, input = this.target
+      var i, dispatchEvent = _dispatchCustomEvent.bind(this.target)
 
       // Fail fast, since this is most likely a programmer error
       if (typeof FileReader.prototype[this.format] !== "function") {
         throw new TypeError('FileReader cannot read as "'+ this.format +'"')
       }
 
-      // Notify listeners that we have started
-      input.dispatchEvent(_createEvent("loadallstart", files))
-
       // Start reading all the files
       for (i = 0; i < files.length; ++i) {
         this.read(files[i])
       }
 
+      dispatchEvent("loadstart-all", files)
       return Promise.all(Array.prototype.map.call(files, _fileToPromise))
         .then(function allLoaded() {
-          input.dispatchEvent(_createEvent("loadall", files))
+          dispatchEvent("load-all", files)
+          dispatchEvent("loadend-all", files)
+        }, function failure(reason) {
+          dispatchEvent("loadend-all", files)
+          return Promise.reject(reason)
         })
-    }
-
-    function _createEvent(name, files) {
-        var event = document.createEvent("Event")
-        event.initEvent(name, false, false)
-        event.files = files
-        return event
     }
 
     /**
