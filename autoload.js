@@ -247,6 +247,24 @@ if (typeof FileReader === "function") {
 
     // --- End Definitions ---
 
+    if (typeof ErrorStackParser === "object") {
+      _defineLazyProperty(Error.prototype, "__stackFrame", {
+        get: function getStackFrame() {
+          return ErrorStackParser.parse(this)[0]
+        }
+      })
+
+      Object.defineProperties(Error.prototype, [
+        "fileName", "lineNumber", "columnNumber"
+      ].filter(Object.prototype.hasOwnProperty.bind(Error.prototype))
+      .reduce(function toGetter(descriptors, name) {
+        descriptors[name] = { get: function getter() {
+          return this.__stackFrame[name]
+        }}
+        return descriptors
+      }, {}))
+    }
+
     /**
      * Attach the needed infrastructure for automatic reading on the provided
      * input element in the provided format.
