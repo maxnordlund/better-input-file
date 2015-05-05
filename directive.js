@@ -12,22 +12,6 @@ angular.module("angular-input-file", [])
         // is an input[type=file] and it has a ngModel.
         if (!ngModel || attr.type !== "file") return
 
-        function emptyArray(value) {
-          return !value || value.length === 0
-        }
-
-        function validate(name, files, validator) {
-          var validity = emptyArray(files) || files.every(validator)
-          ngModel.$setValidity(name, validity)
-          return validFiles
-        }
-
-        function setViewValue(event) {
-          scope.$apply(function setter() {
-            ngModel.$setViewValue((event.originalEvent || event).files)
-          })
-        }
-
         // Enable automatic file loading
         FileReader.auto(element[0], scope.readFormat)
 
@@ -39,26 +23,51 @@ angular.module("angular-input-file", [])
           return Array.prototype.concat.apply([], files)
         })
 
-        // Max size validator
-        if (typeof scope.maxSize === "number") {
-          ngModel.$parsers.push(function validateAllSizes(files) {
-            return validate("maxSize", files, function validateSize(file) {
-              return file && file.size <= scope.maxSize
-            })
-          })
-        }
+        // Check for any errors, such as max size exceeded
+        ngModel.$parsers.push(function validate(files) {
+          var i, error, name
+
+          for (i = 0; i < files.length; ++i) {
+            error = files[i].reader.error
+            if (error instanceof Error || error instanceof DOMError) {
+              name = error.constructor.name.replace(/Error$/, "")
+              name = name[0].toLowerCase() + name.slice(1)
+              ngModel.$setValidity(name, false)
+            }
+          }
+
+          return files
+        })
 
         // Handle multiple/single file(s)
         if (attr.multiple) {
-          ngModel.$isEmpty = emptyArray
+          ngModel.$isEmpty = function isEmptyArray(value) {
+            return !value || value.length === 0
+          }
+
         } else {
           ngModel.$parsers.push(function toSingle(files) {
             return files && files[0]
           })
         }
 
-        element.on("loadstart-all", setViewValue)
+        // Set the ngModel value early to make sure Angulars $dirty is correct.
+        // This event fires just before the file(s) starts to be read.
+        element.on("loadstart-all", function setViewValue(event) {
+          // Clear any left over errors
+          var i, errors = Object.keys(ngModel.$error)
+          for (i = 0; i < errors.length; ++i) {
+            ngModel.$setValidity(errors[i], true)
+          }
+
+          scope.$apply(function setter() {
+            ngModel.$setViewValue((event.originalEvent || event).detail)
+          })
         })
+
+        // Update Angular every time a file is done reading. This event is for
+        // both success and failure.
+        element.on("loadend", scope.$apply.bind(scope))
       }
     }
   })

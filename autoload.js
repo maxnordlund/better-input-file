@@ -27,6 +27,8 @@ if (typeof FileReader === "function") {
 
       this.target = input
       this.format = "readAs" + (format || FileReader.format)
+      this.maxSize = parseInt(input.getAttribute("data-max-size"), 10)
+
       Object.defineProperty(input, "__autoFileReader", {
         enumerable: false,
         configurable: false,
@@ -129,21 +131,37 @@ if (typeof FileReader === "function") {
      * @param {File} file to read
      */
     AutoFileReader.prototype.read = function AutoFileReader$read(file) {
-      var reader = file.reader = new FileReader(),
-          dispatchEvent = this.dispatcher(file)
+      var dispatchEvent = this.dispatcher(file)
 
-      reader.onabort = dispatchEvent
-      reader.onerror = dispatchEvent
-      reader.onload = dispatchEvent
-      reader.onloadstart = dispatchEvent
-      reader.onloadend = dispatchEvent
-      reader.onprogress = dispatchEvent
+      if (file.size < this.maxSize) {
+        file.reader = new FileReader()
 
-      reader[this.format](file)
+        // Pipe events from the Filereader to this input element, but use the
+        // "on<event>" attributes to avoid memoery leaks.
+        Object.keys(file.reader).forEach(function attachDispatcher(name) {
+          if (name.slice(0, 2) === "on") {
+            file.reader[name] = dispatchEvent
+          }
+        })
 
-      if (file.size > 10 * Math.pow(1024, 2)) {
-        console.warn("File size to large for auto load", file.size, "> 10 MiB")
-        reader.abort("size to large")
+        // Start reading
+        file.reader[this.format](file)
+      } else {
+        console.warn("File size to large for auto load", file.size, ">", this.maxSize)
+
+        // Create a dummy reader to work around read only properties.
+        file.reader = Object.create(FileReader.prototype)
+        file.reader.error = new RangeError("File exceeds max-size")
+        file.reader.error.max = this.maxSize
+        file.reader.readyState = FileReader.DONE
+        file.reader.result = null
+
+        // Bind event handling to this input element
+        file.reader.dispatchEvent = dispatchEvent
+        file.reader.addEventListener = this.target.addEventListener.bind(this.target)
+        file.reader.removeEventListener = this.target.removeEventListener.bind(this.target)
+
+        _dispatchCustomEvent.call(file.reader, "error", file.reader.error)
       }
     }
 
