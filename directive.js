@@ -4,7 +4,7 @@ angular.module("angular-input-file", [])
       restrict: "E",
       require: "?ngModel",
       scope: {
-        maxSize: "=?maxSize",
+        maxSize: "@?maxSize",
         readFormat: "=?readFormat"
       },
       link: function link(scope, element, attr, ngModel) {

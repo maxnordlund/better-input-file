@@ -23,11 +23,16 @@ if (typeof FileReader === "function") {
      * @param {String = FileReader.format} format to read as
      */
     function AutoFileReader(input, format) {
-      var i
+      var i, maxSize = input.getAttribute("data-max-size")
 
       this.target = input
       this.format = "readAs" + (format || FileReader.format)
-      this.maxSize = parseInt(input.getAttribute("data-max-size"), 10)
+
+      if (maxSize) {
+        this.maxSize = _parseSize.apply(void 0, maxSize.split(" "))
+      } else {
+        this.maxSize = _parseSize(10, "MiB")
+      }
 
       Object.defineProperty(input, "__autoFileReader", {
         enumerable: false,
@@ -46,6 +51,70 @@ if (typeof FileReader === "function") {
         this.labels[i].addEventListener("drop", this.onDrop.bind(this), false)
       }
     }
+
+    /**
+     * Parse and calculate the provided file size with the provided multipler.
+     *
+     * The provided multipler must be one of "B", "KB", "KiB", "MB", "MiB", "GB"
+     * or "GiB". The return value is the file size in plain bytes.
+     *
+     * @param {Number|String} size in the provided format
+     * @param {String = "B"} multipler for the provided size
+     *
+     * @return {Number} of bytes for the provided size and multipler
+     */
+    function _parseSize(size, multipler) {
+      size = parseInt(size, 10)
+      multipler = _parseSize.multiplers[multipler] || _parseSize.multiplers.B
+
+      // Ensure size is not `NaN`
+      if (size !== size)  {
+        throw new TypeError("max-size is not a number")
+      }
+
+      return parseInt(size, 10) * multipler
+    }
+
+    _parseSize.multiplers = {
+      1000: ["B", "KB", "MB", "GB"],
+      1024: ["B", "KiB", "MiB", "GiB"]
+    }
+
+    // Turns the above object into a lookup table for multiplers.
+    _parseSize.multiplers = Object.keys(_parseSize.multiplers)
+      .reduce(function calculate(result, base) {
+        var power, names = _parseSize.multiplers[base]
+
+        for (power = 0; power < names.length; ++power) {
+          result[names[power]] = Math.pow(base, power)
+        }
+
+        return result
+      }, {})
+
+    /**
+     * Formats the provided size, in bytes, to be human readable.
+     *
+     * Essentially the reverse of _parseSize.
+     *
+     * @param {Number} size in bytes
+     * @return {[Number, String]} [size, multipler]
+     */
+    function _humanSize(size) {
+      var i, name
+
+      for (i = 0; i < _humanSize.multiplers.length; ++i) {
+        name = _humanSize.multiplers[i]
+        if (_parseSize.multiplers[name] < size) {
+          break
+        }
+      }
+
+      // Basic rounding, will have errors but that's fine for this function
+      return [Math.round(100 * size / _parseSize.multiplers[name]) / 100, name]
+    }
+
+    _humanSize.multiplers = ["GiB", "MiB", "KiB", "B"]
 
     _defineLazyProperty(AutoFileReader.prototype, "labels", {
       enumerable: true,
@@ -147,7 +216,10 @@ if (typeof FileReader === "function") {
         // Start reading
         file.reader[this.format](file)
       } else {
-        console.warn("File size to large for auto load", file.size, ">", this.maxSize)
+        console.warn.apply(console,
+          ["File exceeds max-size:"].concat(
+            _humanSize(file.size), ">", _humanSize(this.maxSize)
+        ))
 
         // Create a dummy reader to work around read only properties.
         file.reader = Object.create(FileReader.prototype)
