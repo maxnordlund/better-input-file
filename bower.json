@@ -21,5 +21,9 @@
     "tests",
     "server.js",
     "index.html"
-  ]
+  ],
+  "devDependencies": {
+    "error-stack-parser": "~1.2.0",
+    "angular": "1.2.26"
+  }
 }

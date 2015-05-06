@@ -3,25 +3,17 @@ var express = require("express"),
     port = process.env.PORT || 3000,
     app = express()
 
-app.use(bodyParser.json())
-
-app.get("/", function(req, res) {
-  console.log("Served root")
-  res.sendFile("/index.html", { root: __dirname })
+app.use(function logger(req, res, next) {
+  console.log((new Date).toTimeString(), req.method, req.originalUrl)
+  next()
 })
+app.use(express["static"](__dirname))
+app.use(bodyParser.json())
 
 app.post("/process", function (req, res) {
   res.json({ ok: true })
   console.log("Process file")
   console.log(req.body)
-})
-
-var files = ["index.html", "directive.js", "autoload.js"]
-files.forEach(function (file) {
-  app.get("/"+file, function (req, res) {
-    console.log("Served", file)
-    res.sendFile(file, { root: __dirname })
-  })
 })
 
 var signals = ["SIGINT", "SIGTERM"]

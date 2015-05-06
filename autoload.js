@@ -1,21 +1,39 @@
 /**
  * If the browser supports it, find all input[type=file] and attch event
- * listners to automatically load the selected file using FileReader.
+ * listners to automatically load the selected file(s) using FileReader(s).
  *
- * Caveats:
- * This needs FileReader to work and uses a simple detection test to see if the
- * browser supports it. However it then assumes that the browser is fairly new
- * and has access to some of the other HTML5 APIs. All the modern browsers that
- * do support FileReader also supports these extra APIs but if you need it to
- * work on something exotic, make sure to test it.
+ * Since the above is run only once when the DOM is ready, it won't pick up any
+ * dynamically added input elements. For those situations this adds new static
+ * method `FileReader.auto` which takes an input element and enables the above.
+ * It is safe to call `FileReader.auto` multiple times on the same element, as
+ * it remembers if it already has been called with that element.
  */
-if (typeof FileReader !== "undefined") {
+if (typeof FileReader === "function") {
   (function() {
+    "use strict"
+
+    // --- Begin Definitions ---
+
+    /**
+     * AutoFileReader represents the infrastructure to automatically read files
+     * using native FileReader objects.
+     *
+     * @constructor
+     * @param {HTMLInputElement} input element to attach to
+     * @param {String = FileReader.format} format to read as
+     */
     function AutoFileReader(input, format) {
-      var i
+      var i, maxSize = input.getAttribute("data-max-size")
 
       this.target = input
       this.format = "readAs" + (format || FileReader.format)
+
+      if (maxSize) {
+        this.maxSize = _parseSize.apply(void 0, maxSize.split(" "))
+      } else {
+        this.maxSize = _parseSize(10, "MiB")
+      }
+
       Object.defineProperty(input, "__autoFileReader", {
         enumerable: false,
         configurable: false,
@@ -23,10 +41,10 @@ if (typeof FileReader !== "undefined") {
         value: this
       })
 
-      // Normal interaction
+      // Enable automatic reading when this input changes
       input.addEventListener("change", this.onChange.bind(this), false)
 
-      // Drag and Drop
+      // Enable Drag'N'Drop on all of this inputs labels
       for (i = 0; i < this.labels.length; ++i) {
         this.labels[i].addEventListener("dragenter", enableDragAndDrop, false)
         this.labels[i].addEventListener("dragover", enableDragAndDrop, false)
@@ -34,7 +52,71 @@ if (typeof FileReader !== "undefined") {
       }
     }
 
-    Object.defineProperty(AutoFileReader.prototype, "labels", {
+    /**
+     * Parse and calculate the provided file size with the provided multipler.
+     *
+     * The provided multipler must be one of "B", "KB", "KiB", "MB", "MiB", "GB"
+     * or "GiB". The return value is the file size in plain bytes.
+     *
+     * @param {Number|String} size in the provided format
+     * @param {String = "B"} multipler for the provided size
+     *
+     * @return {Number} of bytes for the provided size and multipler
+     */
+    function _parseSize(size, multipler) {
+      size = parseInt(size, 10)
+      multipler = _parseSize.multiplers[multipler] || _parseSize.multiplers.B
+
+      // Ensure size is not `NaN`
+      if (size !== size)  {
+        throw new TypeError("max-size is not a number")
+      }
+
+      return parseInt(size, 10) * multipler
+    }
+
+    _parseSize.multiplers = {
+      1000: ["B", "KB", "MB", "GB"],
+      1024: ["B", "KiB", "MiB", "GiB"]
+    }
+
+    // Turns the above object into a lookup table for multiplers.
+    _parseSize.multiplers = Object.keys(_parseSize.multiplers)
+      .reduce(function calculate(result, base) {
+        var power, names = _parseSize.multiplers[base]
+
+        for (power = 0; power < names.length; ++power) {
+          result[names[power]] = Math.pow(base, power)
+        }
+
+        return result
+      }, {})
+
+    /**
+     * Formats the provided size, in bytes, to be human readable.
+     *
+     * Essentially the reverse of _parseSize.
+     *
+     * @param {Number} size in bytes
+     * @return {[Number, String]} [size, multipler]
+     */
+    function _humanSize(size) {
+      var i, name
+
+      for (i = 0; i < _humanSize.multiplers.length; ++i) {
+        name = _humanSize.multiplers[i]
+        if (_parseSize.multiplers[name] < size) {
+          break
+        }
+      }
+
+      // Basic rounding, will have errors but that's fine for this function
+      return [Math.round(100 * size / _parseSize.multiplers[name]) / 100, name]
+    }
+
+    _humanSize.multiplers = ["GiB", "MiB", "KiB", "B"]
+
+    _defineLazyProperty(AutoFileReader.prototype, "labels", {
       enumerable: true,
       configurable: false,
       get: function getLabels() {
@@ -43,7 +125,7 @@ if (typeof FileReader !== "undefined") {
             labels = input.labels
 
         // Find the labels for this input in the DOM
-        if (typeof labels === "undefined") {
+        if (labels == null) {
           if (input.id) {
             labels = document.querySelectorAll("label[for=" + input.id + "]")
           }
@@ -59,87 +141,173 @@ if (typeof FileReader !== "undefined") {
           }
         }
 
-        // Remeber this value to save a few cycles
-        Object.defineProperty(this, "labels", {
-          enumerable: true,
-          configurable: false,
-          writable: false,
-          value: Array.prototype.concat.apply([], labels)
-        })
-        return this.labels
+        return Array.prototype.concat.apply([], labels)
       }
     })
 
-    AutoFileReader.prototype.dispatcher = function AutoFileReader$dispatcher(file) {
-      var input = this.target
+    /**
+     * Define a lazily evaluated memonized property on the provided object with
+     * the provided key using the provided property descriptor.
+     *
+     * It has the same parameters as `Object.defineProperty`.
+     *
+     * @param {Object} object
+     * @param {String} key
+     * @param {Object} descriptor
+     */
+    function _defineLazyProperty(object, key, descriptor) {
+      var getter = descriptor.get,
+          writable = descriptor.writeable || false
 
-      return function dispatchEvent(event) {
+      delete descriptor.writeable
+      descriptor.get = function init() {
+        delete descriptor.get
+        delete descriptor.set
+        descriptor.value = getter.call(this)
+        descriptor.writeable = writable
+        Object.defineProperty(this, key, descriptor)
+        return descriptor.value
+      }
+      Object.defineProperty(object, key, descriptor)
+    }
+
+    /**
+     * Creates and returns a dispatcher function bound to the input element
+     * this is attached to.
+     *
+     * @param {File} file to set as relatedTarget on the dispatached event
+     * @return {dispatchEventAsync} dispatcher function
+     */
+    AutoFileReader.prototype.dispatcher = function AutoFileReader$dispatcher(file) {
+      var dispatchEvent = this.target.dispatchEvent.bind(this.target)
+
+      /**
+       * @callback dispatchEventAsync
+       * @param {Event} event to dispatch asyncronously
+       */
+      return function dispatchEventAsync(event) {
         event.relatedTarget = file
 
         // Dispatch asyncronous to avoid "The event is already being dispatched"
-        setTimeout(function dispatchAsync() {
-          input.dispatchEvent(event)
-        }, 0)
+        setTimeout(dispatchEvent, 0, event)
       }
     }
 
+    /**
+     * Read the provided file using a FileReader and pipe the readers events to
+     * the input element this is attached to.
+     *
+     * @param {File} file to read
+     */
     AutoFileReader.prototype.read = function AutoFileReader$read(file) {
-      var reader = file.reader = new FileReader(),
-          dispatchEvent = this.dispatcher(file)
+      var dispatchEvent = this.dispatcher(file)
 
-      reader.onabort = dispatchEvent
-      reader.onerror = dispatchEvent
-      reader.onload = dispatchEvent
-      reader.onloadstart = dispatchEvent
-      reader.onloadend = dispatchEvent
-      reader.onprogress = dispatchEvent
+      if (file.size < this.maxSize) {
+        file.reader = new FileReader()
 
-      reader[this.format](file)
+        // Pipe events from the Filereader to this input element, but use the
+        // "on<event>" attributes to avoid memoery leaks.
+        Object.keys(file.reader).forEach(function attachDispatcher(name) {
+          if (name.slice(0, 2) === "on") {
+            file.reader[name] = dispatchEvent
+          }
+        })
 
-      if (file.size > 10 * Math.pow(1024, 2)) {
-        console.warn("File size to large for auto load", file.size, "> 10 MiB")
-        reader.abort("size to large")
+        // Start reading
+        file.reader[this.format](file)
+      } else {
+        console.warn.apply(console,
+          ["File exceeds max-size:"].concat(
+            _humanSize(file.size), ">", _humanSize(this.maxSize)
+        ))
+
+        // Create a dummy reader to work around read only properties.
+        file.reader = Object.create(FileReader.prototype)
+        file.reader.error = new RangeError("File exceeds max-size")
+        file.reader.error.max = this.maxSize
+        file.reader.readyState = FileReader.DONE
+        file.reader.result = null
+
+        // Bind event handling to this input element
+        file.reader.dispatchEvent = dispatchEvent
+        file.reader.addEventListener = this.target.addEventListener.bind(this.target)
+        file.reader.removeEventListener = this.target.removeEventListener.bind(this.target)
+
+        _dispatchCustomEvent.call(file.reader, "error", file.reader.error)
       }
     }
 
+    /**
+     * Create and dispatch a CustomEvent with the provided name and details to
+     * the EventTarget bound to this function.
+     *
+     * @this {EventTarget} to dispatch the event to
+     * @param {String} name of the event
+     * @param {*} details for the event
+     */
+    function _dispatchCustomEvent(name, details) {
+        var event = document.createEvent("CustomEvent")
+        event.initCustomEvent(name, false, false, details)
+        this.dispatchEvent(event)
+    }
+
+    /**
+     * Callback for _change_ events from the input element this is attached to.
+     *
+     * @callback onChange
+     * @param {Event} event
+     */
     AutoFileReader.prototype.onChange = function AutoFileReader$onChange(event) {
       this.processFiles(event.target.files)
     }
 
+    /**
+     * Callback for _drop_ events from the input element this is attached to.
+     *
+     * @callback onDrop
+     * @param {Event} event
+     */
     AutoFileReader.prototype.onDrop = function AutoFileReader$onDrop(event) {
       this.processFiles(event.dataTransfer.files)
       event.preventDefault()
     }
 
+    /**
+     * Read all the provided files and fire the corresponding events.
+     *
+     * @param {FileList} files to start reading
+     */
     AutoFileReader.prototype.processFiles = function AutoFileReader$processFiles(files) {
-      var i, input = this.target
+      var i, dispatchEvent = _dispatchCustomEvent.bind(this.target)
 
       // Fail fast, since this is most likely a programmer error
       if (typeof FileReader.prototype[this.format] !== "function") {
         throw new TypeError('FileReader cannot read as "'+ this.format +'"')
       }
 
-      // Notify listeners that we have started
-      input.dispatchEvent(_createEvent("loadallstart", files))
-
       // Start reading all the files
       for (i = 0; i < files.length; ++i) {
         this.read(files[i])
       }
 
+      dispatchEvent("loadstart-all", files)
       return Promise.all(Array.prototype.map.call(files, _fileToPromise))
         .then(function allLoaded() {
-          input.dispatchEvent(_createEvent("loadall", files))
+          dispatchEvent("load-all", files)
+          dispatchEvent("loadend-all", files)
+        }, function failure(reason) {
+          dispatchEvent("loadend-all", files)
+          return Promise.reject(reason)
         })
     }
 
-    function _createEvent(name, files) {
-        var event = document.createEvent("Event")
-        event.initEvent(name, false, false)
-        event.files = files
-        return event
-    }
-
+    /**
+     * Listen on the provided files' readers' events and return a Promise that
+     * acts accordingly.
+     *
+     * @param {File} file whose reader will listened on
+     * @return {Promise} for the completion of the reading
+     */
     function _fileToPromise(file) {
       var name,
           events = {},
@@ -174,10 +342,41 @@ if (typeof FileReader !== "undefined") {
       event.preventDefault()
     }
 
-    // Attach to FileReader
+    // --- End Definitions ---
+
+    if (typeof ErrorStackParser === "object") {
+      _defineLazyProperty(Error.prototype, "__stackFrame", {
+        get: function getStackFrame() {
+          return ErrorStackParser.parse(this)[0]
+        }
+      })
+
+      Object.defineProperties(Error.prototype, [
+        "fileName", "lineNumber", "columnNumber"
+      ].filter(Object.prototype.hasOwnProperty.bind(Error.prototype))
+      .reduce(function toGetter(descriptors, name) {
+        descriptors[name] = { get: function getter() {
+          return this.__stackFrame[name]
+        }}
+        return descriptors
+      }, {}))
+    }
+
+    /**
+     * Attach the needed infrastructure for automatic reading on the provided
+     * input element in the provided format.
+     *
+     * This is safe to call multiple times on the same input element. It will
+     * remember if it already has been called.
+     *
+     * @param {HTMLInputElement} input element to attach to
+     * @param {String} format to read the file as
+     * @return {AutoFileReader}
+     */
     FileReader.auto = function FileReader_auto(input, format) {
       return input.__autoFileReader || new AutoFileReader(input, format)
     }
+
     if (typeof FileReader.format === "undefined") {
       FileReader.format = "DataURL"
     }
