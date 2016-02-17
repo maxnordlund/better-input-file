@@ -3,17 +3,19 @@ angular.module("angular-input-file", [])
     return {
       restrict: "E",
       require: "?ngModel",
+      /* Can't use isolated scope, because ngModel already has done so.
       scope: {
         maxSize: "@?maxSize",
         readFormat: "=?readFormat"
       },
+      */
       link: function link(scope, element, attr, ngModel) {
         // This directive should only activate if the element it's attached to
         // is an input[type=file] and it has a ngModel.
         if (!ngModel || attr.type !== "file") return
 
         // Enable automatic file loading
-        FileReader.auto(element[0], scope.readFormat)
+        FileReader.auto(element[0], attr.readFormat)
 
         // In order to simplify the code, assume multiple files and handle the
         // single file case further down.
