@@ -23,7 +23,7 @@
     "index.html"
   ],
   "devDependencies": {
-    "error-stack-parser": "~1.2.0",
-    "angular": "1.2.26"
+    "error-stack-parser": "1.x",
+    "angular": "1.3"
   }
 }
