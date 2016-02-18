@@ -221,11 +221,12 @@ if (typeof FileReader === "function") (function() {
       ))
 
       // Create a dummy reader to work around read only properties.
-      file.reader = Object.create(FileReader.prototype)
-      file.reader.error = new RangeError("File exceeds max-size")
+      file.reader = Object.create(FileReader.prototype, {
+        readyState: { value: FileReader.done },
+        result: { value: null },
+        error: { value: new RangeError("File exceeds max-size") }
+      })
       file.reader.error.max = this.maxSize
-      file.reader.readyState = FileReader.DONE
-      file.reader.result = null
 
       // Bind event handling to this input element
       file.reader.dispatchEvent = dispatchEvent
