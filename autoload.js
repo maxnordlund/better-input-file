@@ -206,11 +206,11 @@ if (typeof FileReader === "function") (function() {
 
       // Pipe events from the Filereader to this input element, but use the
       // "on<event>" attributes to avoid memoery leaks.
-      Object.keys(file.reader).forEach(function attachDispatcher(name) {
+      for (name in file.reader) {
         if (name.slice(0, 2) === "on") {
           file.reader[name] = dispatchEvent
         }
-      })
+      }
 
       // Start reading
       file.reader[this.format](file)
