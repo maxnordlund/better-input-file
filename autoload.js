@@ -210,7 +210,7 @@ if (typeof FileReader === "function") (function() {
       file.reader = new FileReader()
 
       // Pipe events from the Filereader to this input element, but use the
-      // "on<event>" attributes to avoid memoery leaks.
+      // "on<event>" attributes to avoid memory leaks.
       for (name in file.reader) {
         if (name.slice(0, 2) === "on") {
           file.reader[name] = dispatchEvent
