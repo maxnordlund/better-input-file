@@ -9,7 +9,7 @@ attach the needed infrastructure for it to automatically read the file(s) that
 the user has chosen. This can be either from the `input[type=file]` or dragged
 and dropped onto one of its labels.
 
-Everytime this happens it creates a new `FileReader` for each `File` chosen and
+Every time this happens it creates a new `FileReader` for each `File` chosen and
 starts the reading. Access to this `FileReader` is provided through a new
 property `reader` on the corresponding `File`.
 
@@ -19,8 +19,8 @@ call it multiple times on the same element. It remembers if it already has been
 enabled.
 
 ## Public API
-In order to avoid polluting the global namespace [autoload.js][1] statically
-adds its public API to the native `FileReader` class.
+In order to avoid polluting the global namespace [autoload.js][1] adds its
+public API to the native `FileReader` class as static methods.
 
 ### `FileReader.format`
 This specifies the default format for automatic file reading. This is the part
@@ -66,8 +66,8 @@ For the vanilla JavaScript version, it requires the [File API][6] and a fairly
 modern browser. Make sure you test it on all platforms you need to support.
 
 ## Drag'N'Drop
-Because of the way drag'n'drop works, you can't relie on the `files` property
-on the `input[type]` element for the list of files the user has chosen. Instead
+Because of the way drag'n'drop works, you can't rely on the `files` property on
+the `input[type]` element for the list of files the user has chosen. Instead
 listen for one of the above custom events which unifies this for you.
 
 ## License
