@@ -13,6 +13,8 @@ if (typeof FileReader === "function") (function() {
 
   // --- Begin Definitions ---
 
+  const HIDDEN_FIELD_SYMBOL = Symbol("@@autoFileReader")
+
   /**
    * AutoFileReader represents the infrastructure to automatically read files
    * using native FileReader objects.
@@ -33,7 +35,7 @@ if (typeof FileReader === "function") (function() {
       this.maxSize = _parseSize(10, "MiB")
     }
 
-    Object.defineProperty(input, "@@autoFileReader", {
+    Object.defineProperty(input, HIDDEN_FIELD_SYMBOL, {
       enumerable: false,
       configurable: false,
       writable: false,
@@ -378,7 +380,7 @@ if (typeof FileReader === "function") (function() {
       throw new TypeError(String(input) + " is not a HTMLInputElement")
     }
 
-    return input["@@autoFileReader"] || new AutoFileReader(input, format)
+    return input[HIDDEN_FIELD_SYMBOL] || new AutoFileReader(input, format)
   }
 
   if (typeof FileReader.format === "undefined") {
