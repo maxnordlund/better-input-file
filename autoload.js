@@ -313,7 +313,7 @@ if (typeof FileReader === "function") (function() {
    */
   function _fileToPromise(file) {
     var name,
-        events = {},
+        events = Object.create(null),
         promise = new Promise(function resolver(resolve, reject) {
           events.abort = reject
           events.error = reject
