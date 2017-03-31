@@ -121,24 +121,27 @@ if (typeof FileReader === "function") (function() {
     enumerable: true,
     configurable: false,
     get: function getLabels() {
-      var input = this.target,
-          parent = input,
+      var parent,
+          input = this.target,
           labels = input.labels
 
       // Find the labels for this input in the DOM
       if (labels == null) {
         if (input.id) {
-          labels = document.querySelectorAll("label[for=" + input.id + "]")
+          labels =  Array.prototype.concat.apply(
+            [], document.querySelectorAll("label[for=" + input.id + "]")
+          )
+        } else {
+          labels = []
         }
 
-        while (parent !== null) {
+        for (parent = input; parent != null; parent = parent.parentElement) {
           if (parent instanceof HTMLLabelElement) {
-            if (Array.prototype.indexOf.call(labels, parent) === -1) {
-              labels = Array.prototype.concat.apply([parent], labels)
+            if (labels.indexOf(parent) === -1) {
+              labels.push(parent)
             }
             break
           }
-          parent = parent.parentElement
         }
       }
 
