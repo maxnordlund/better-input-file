@@ -33,7 +33,7 @@ if (typeof FileReader === "function") (function() {
       this.maxSize = _parseSize(10, "MiB")
     }
 
-    Object.defineProperty(input, "__autoFileReader", {
+    Object.defineProperty(input, "@@autoFileReader", {
       enumerable: false,
       configurable: false,
       writable: false,
@@ -374,7 +374,11 @@ if (typeof FileReader === "function") (function() {
    * @return {AutoFileReader}
    */
   FileReader.auto = function FileReader_auto(input, format) {
-    return input.__autoFileReader || new AutoFileReader(input, format)
+    if (!(input instanceof HTMLInputElement)) {
+      throw new TypeError(String(input) + " is not a HTMLInputElement")
+    }
+
+    return input["@@autoFileReader"] || new AutoFileReader(input, format)
   }
 
   if (typeof FileReader.format === "undefined") {
