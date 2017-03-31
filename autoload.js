@@ -220,10 +220,8 @@ if (typeof FileReader === "function") (function() {
       // Start reading
       file.reader[this.format](file)
     } else {
-      console.warn.apply(console,
-        ["File exceeds max-size:"].concat(
-          _humanSize(file.size), ">", _humanSize(this.maxSize)
-      ))
+      console.warn("File exceeds max-size:",
+                   _humanSize(file.size), ">", _humanSize(this.maxSize))
 
       // Create a dummy reader to work around read only properties.
       file.reader = Object.create(FileReader.prototype, {
