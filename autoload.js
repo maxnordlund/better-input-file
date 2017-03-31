@@ -324,14 +324,19 @@ if (typeof FileReader === "function") (function() {
       file.reader.addEventListener(name, events[name], false)
     }
 
-    function removeAllListners() {
+    function removeAllListeners() {
       for (var name in events) {
         file.reader.removeEventListener(name, events[name], false)
       }
     }
 
     // Make sure to always remove all event listners.
-    return promise.then(removeAllListners, removeAllListners)
+    return promise.then(
+      removeAllListeners,
+      function failure(reason) {
+        removeAllListeners()
+        return Promise.reject(reason)
+      })
   }
 
   /**
