@@ -261,6 +261,7 @@ if (typeof FileReader === "function") (function() {
    * @param {Event} event
    */
   AutoFileReader.prototype.onChange = function AutoFileReader$onChange(event) {
+    if (event.target.disabled) return
     this.processFiles(event.target.files)
   }
 
@@ -271,8 +272,9 @@ if (typeof FileReader === "function") (function() {
    * @param {Event} event
    */
   AutoFileReader.prototype.onDrop = function AutoFileReader$onDrop(event) {
-    this.processFiles(event.dataTransfer.files)
     event.preventDefault()
+    if (event.target.control.disabled) return
+    this.processFiles(event.dataTransfer.files)
   }
 
   /**
