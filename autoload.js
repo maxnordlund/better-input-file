@@ -274,6 +274,7 @@ if (typeof FileReader === "function") (function() {
   AutoFileReader.prototype.onDrop = function AutoFileReader$onDrop(event) {
     event.preventDefault()
     if (event.target.control.disabled) return
+    event.target.control.files = event.dataTransfer.files
     this.processFiles(event.dataTransfer.files)
   }
 
