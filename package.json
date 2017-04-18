@@ -1,6 +1,6 @@
 {
   "name": "better-input-file",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "Upgrade your `input[type=file]` to automatically load their selected file(s). Integrated with AngularJS as an proper directive.",
   "main": "server.js",
   "devDependencies": {
