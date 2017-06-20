@@ -13,7 +13,7 @@ if (typeof FileReader === "function") (function() {
 
   // --- Begin Definitions ---
 
-  const HIDDEN_FIELD_SYMBOL = Symbol("@@autoFileReader")
+  var HIDDEN_FIELD_SYMBOL = Symbol("@@autoFileReader")
 
   /**
    * AutoFileReader represents the infrastructure to automatically read files
