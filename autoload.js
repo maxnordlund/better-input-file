@@ -113,7 +113,7 @@ if (typeof FileReader === "function") (function() {
 
   _humanSize.multiplers = ["GiB", "MiB", "KiB", "B"]
 
-  _defineLazyProperty(AutoFileReader.prototype, "labels", {
+  Object.defineProperty(AutoFileReader.prototype, "labels", {
     enumerable: true,
     configurable: false,
     get: function getLabels() {
