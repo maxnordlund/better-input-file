@@ -46,11 +46,7 @@ if (typeof FileReader === "function") (function() {
     input.addEventListener("change", this.onChange.bind(this), false)
 
     // Enable Drag'N'Drop on all of this inputs labels
-    for (i = 0; i < this.labels.length; ++i) {
-      this.labels[i].addEventListener("dragenter", enableDragAndDrop, false)
-      this.labels[i].addEventListener("dragover", enableDragAndDrop, false)
-      this.labels[i].addEventListener("drop", this.onDrop.bind(this), false)
-    }
+    this.enableDragNDraop()
   }
 
   /**
@@ -173,6 +169,17 @@ if (typeof FileReader === "function") (function() {
       return descriptor.value
     }
     Object.defineProperty(object, key, descriptor)
+  }
+
+  /**
+   * Adds the drag-n-drop event listeners to the input element's labels.
+   */
+  AutoFileReader.prototype.enableDragNDraop = function AutoFileReader$enableDragNDraop() {
+    for (i = 0; i < this.labels.length; ++i) {
+      this.labels[i].addEventListener("dragenter", enableDragAndDrop, false)
+      this.labels[i].addEventListener("dragover", enableDragAndDrop, false)
+      this.labels[i].addEventListener("drop", this.onDrop.bind(this), false)
+    }
   }
 
   /**
