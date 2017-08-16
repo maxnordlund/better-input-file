@@ -31,7 +31,7 @@ angular.module("angular-input-file", [])
 
           for (i = 0; i < files.length; ++i) {
             error = files[i].reader.error
-            if (error instanceof Error || error instanceof DOMError) {
+            if (error instanceof Error) {
               name = error.constructor.name.replace(/Error$/, "")
               name = name[0].toLowerCase() + name.slice(1)
               ngModel.$setValidity(name, false)
