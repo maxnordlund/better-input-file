@@ -71,7 +71,7 @@ the `input[type]` element for the list of files the user has chosen. Instead
 listen for one of the above custom events which unifies this for you.
 
 ## License
-This code is licensed under MIT, the the [LICENSE.md][7] file for details.
+This code is licensed under MIT, see the [LICENSE.md][7] file for details.
 
 [1]: autoload.js
 [2]: https://developer.mozilla.org/en-US/docs/Web/API/FileReader#Methods
